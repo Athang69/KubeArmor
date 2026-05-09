@@ -28,7 +28,7 @@ require (
 	github.com/cilium/ebpf v0.20.0
 	github.com/containerd/containerd/api v1.10.0
 	github.com/containerd/containerd/v2 v2.2.2
-	github.com/containerd/nri v0.11.0
+	github.com/containerd/nri v0.12.0
 	github.com/containerd/typeurl/v2 v2.2.3
 	github.com/florianl/go-nflog/v2 v2.3.0
 	github.com/fsnotify/fsnotify v1.9.0
@@ -149,6 +149,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
+	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
