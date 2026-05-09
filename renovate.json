@@ -8,10 +8,13 @@
   "schedule": ["before 4am on monday"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
-  "docker": {
-    "pinDigests": true
-  },
   "packageRules": [
+    {
+      "matchCategories": [
+        "docker"
+      ],
+      "pinDigests": true
+    },
     {
       "description": "Group all GitHub Actions digest-pin updates into one PR",
       "matchManagers": ["github-actions"],
