@@ -32,8 +32,8 @@ jobs:
       - name: Self-hosted Renovate
         uses: renovatebot/github-action@79dc0ba74dc3de28db0a7aeb1d0b95d5bf5fde2a # v46.1.13
         env:
-          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          LOG_LEVEL: ${{ github.event.inputs.logLevel || 'info' }}
           RENOVATE_GIT_AUTHOR: "Renovate Bot <29139614+renovate[bot]@users.noreply.github.com>"
-          RENOVATE_REPOSITORIES: "Athang69/KubeArmor"
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
