@@ -52,6 +52,8 @@ jobs:
     runs-on: oracle-vm-16cpu-64gb-x86-64
     permissions:
       id-token: write
+      contents: read
+      packages: write
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -167,6 +169,8 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       id-token: write
+      contents: read
+      packages: write
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -240,6 +244,8 @@ jobs:
     runs-on: oracle-vm-16cpu-64gb-x86-64
     permissions:
       id-token: write
+      contents: read
+      packages: write
     timeout-minutes: 150    
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
