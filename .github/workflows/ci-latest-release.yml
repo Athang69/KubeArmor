@@ -58,7 +58,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: 'KubeArmor/go.mod'
       - name: Install the latest LLVM toolchain
@@ -252,7 +252,7 @@ jobs:
 
       - name: Check install
         run: regctl version
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: 'KubeArmor/go.mod'
       - name: Set up Docker
