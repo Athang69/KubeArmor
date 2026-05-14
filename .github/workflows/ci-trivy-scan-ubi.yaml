@@ -8,7 +8,7 @@ on:
     paths:
       - "KubeArmor/**"
       - "protobuf/**"
-      - ".github/workflows/ci-trivy-scan.yaml"
+      - ".github/workflows/ci-trivy-scan-ubi.yaml"
       - "pkg/**"
       - "!STABLE-RELEASE"
 
@@ -28,17 +28,17 @@ jobs:
     timeout-minutes: 150
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'KubeArmor/go.mod'
       
       - name: Filter changed paths
-        uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2
+        uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
@@ -57,7 +57,7 @@ jobs:
         run: ./.github/workflows/install-libbpf.sh
 
       - name: Set up Docker
-        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4
+        uses: docker/setup-docker-action@v4
         with:
           daemon-config: |
             {
@@ -68,32 +68,32 @@ jobs:
             }      
   
       - name: Build KubeArmor images to Docker
-        run: GITHUB_SHA=$GITHUB_SHA ./KubeArmor/build/build_kubearmor.sh
+        run: GITHUB_SHA=$GITHUB_SHA ./KubeArmor/build/build_kubearmor_ubi.sh
       
       - name: Build Kubearmor controller 
         if: steps.filter.outputs.controller == 'true'
         working-directory: ./pkg/KubeArmorController
-        run: make docker-build
+        run: make docker-build-ubi
 
       - name: Build Kubearmor operator
         if: steps.filter.outputs.operator == 'true'
         working-directory: ./pkg/KubeArmorOperator
-        run: make docker-build
+        run: make docker-build-ubi
 
       - name: Save images to tar for Trivy Scan
         run: |
-          docker save -o kubearmor-init.tar kubearmor/kubearmor-init:latest
-          docker save -o kubearmor.tar kubearmor/kubearmor:latest
+          docker save -o kubearmor-init.tar kubearmor/kubearmor-init-ubi:latest
+          docker save -o kubearmor.tar kubearmor/kubearmor-ubi:latest
           if [[ ${{ steps.filter.outputs.operator }} == 'true' ]]; then
-            docker save -o kubearmor-operator.tar kubearmor/kubearmor-operator:latest
+            docker save -o kubearmor-operator.tar kubearmor/kubearmor-operator-ubi:latest
           fi
           if [[ ${{ steps.filter.outputs.controller }} == 'true' ]]; then
-            docker save -o kubearmor-controller.tar kubearmor/kubearmor-controller:latest
+            docker save -o kubearmor-controller.tar kubearmor/kubearmor-controller-ubi:latest
           fi
-          
+
       - name: Run Trivy vulnerability scanner on kubearmor-init
         id: scan_init
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           input: kubearmor-init.tar
           format: 'table'
@@ -105,7 +105,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner on kubearmor
         id: scan_main
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           input: kubearmor.tar
           format: 'table'
@@ -118,7 +118,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on kubearmor-controller
         if: steps.filter.outputs.controller == 'true'
         id: scan_controller
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           input: kubearmor-controller.tar
           format: 'table'
@@ -131,7 +131,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on kubearmor-operator
         if: steps.filter.outputs.operator == 'true'
         id: scan_operator
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           input: kubearmor-operator.tar
           format: 'table'
