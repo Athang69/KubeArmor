@@ -18,11 +18,10 @@ RUN apt-get install -y net-tools iputils-ping telnet ssh tcpdump nmap dsniff arp
 RUN apt-get install -y curl iperf3 netperf ethtool python-scapy python3-pip
 RUN apt-get install -y iptables bridge-utils apache2 vim
 
+RUN apt-get install -y python3-flask && ln -sf /usr/bin/python3 /usr/bin/python
 RUN apt-get clean
 RUN apt-get autoremove -y
 RUN rm -rf /var/lib/{apt,dpkg,cache,log}/
-
-RUN python3 -m pip install flask==3.1.1 && ln -sf /usr/bin/python3 /usr/bin/python
 ADD flask/http_test.py /
 COPY entrypoint.sh /entrypoint.sh
 
