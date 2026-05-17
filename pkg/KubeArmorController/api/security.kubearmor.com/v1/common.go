@@ -42,6 +42,9 @@ type ProcessPathType struct {
 	// +kubebuilder:validation:Optional
 	OwnerOnly bool `json:"ownerOnly,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	Pts *bool `json:"pts,omitempty"`
+
 	// +kubebuilder:validation:optional
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
@@ -62,6 +65,9 @@ type ProcessDirectoryType struct {
 	Recursive bool `json:"recursive,omitempty"`
 	// +kubebuilder:validation:Optional
 	OwnerOnly bool `json:"ownerOnly,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Pts *bool `json:"pts,omitempty"`
 
 	// +kubebuilder:validation:optional
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
@@ -114,7 +120,8 @@ type FilePathType struct {
 	ReadOnly bool `json:"readOnly,omitempty"`
 	// +kubebuilder:validation:Optional
 	OwnerOnly bool `json:"ownerOnly,omitempty"`
-
+	// +kubebuilder:validation:Optional
+	Pts *bool `json:"pts,omitempty"`
 	// +kubebuilder:validation:optional
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
@@ -137,7 +144,8 @@ type FileDirectoryType struct {
 	ReadOnly bool `json:"readOnly,omitempty"`
 	// +kubebuilder:validation:Optional
 	OwnerOnly bool `json:"ownerOnly,omitempty"`
-
+	// +kubebuilder:validation:Optional
+	Pts *bool `json:"pts,omitempty"`
 	// +kubebuilder:validation:optional
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
@@ -189,7 +197,8 @@ type MatchNetworkProtocolStringType string
 
 type MatchNetworkProtocolType struct {
 	Protocol MatchNetworkProtocolStringType `json:"protocol"`
-
+	// +kubebuilder:validation:Optional
+	Pts *bool `json:"pts,omitempty"`
 	// +kubebuilder:validation:optional
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
@@ -217,8 +226,39 @@ type MatchHostNetworkProtocolType struct {
 	Action ActionType `json:"action,omitempty"`
 }
 
+type MatchDNSQueryType struct {
+	Domain string `json:"domain"`
+	// +kubebuilder:validation:optional
+	FromSource []MatchSourceType `json:"fromSource,omitempty"`
+
+	// +kubebuilder:validation:optional
+	Severity SeverityType `json:"severity,omitempty"`
+	// +kubebuilder:validation:optional
+	Tags []string `json:"tags,omitempty"`
+	// +kubebuilder:validation:optional
+	Message string `json:"message,omitempty"`
+	// +kubebuilder:validation:optional
+	Action ActionType `json:"action,omitempty"`
+}
+
+type MatchHostDNSQueryType struct {
+	Domain string `json:"domain"`
+	// +kubebuilder:validation:optional
+	FromSource []MatchSourceType `json:"fromSource,omitempty"`
+
+	// +kubebuilder:validation:optional
+	Severity SeverityType `json:"severity,omitempty"`
+	// +kubebuilder:validation:optional
+	Tags []string `json:"tags,omitempty"`
+	// +kubebuilder:validation:optional
+	Message string `json:"message,omitempty"`
+	// +kubebuilder:validation:optional
+	Action ActionType `json:"action,omitempty"`
+}
+
 type NetworkType struct {
-	MatchProtocols []MatchNetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchProtocols  []MatchNetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchDNSQueries []MatchDNSQueryType        `json:"matchDNSQueries,omitempty"`
 
 	// +kubebuilder:validation:optional
 	Severity SeverityType `json:"severity,omitempty"`
@@ -231,7 +271,8 @@ type NetworkType struct {
 }
 
 type HostNetworkType struct {
-	MatchProtocols []MatchHostNetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchProtocols  []MatchHostNetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchDNSQueries []MatchHostDNSQueryType        `json:"matchDNSQueries,omitempty"`
 
 	// +kubebuilder:validation:optional
 	Severity SeverityType `json:"severity,omitempty"`

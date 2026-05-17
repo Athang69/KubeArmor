@@ -323,7 +323,33 @@ func K8sExecInPod(pod string, ns string, cmd []string) (string, string, error) {
 	}
 	buf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
-	exec.Stream(remotecommand.StreamOptions{
+	exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
+		Stdout: buf,
+		Stderr: errBuf,
+	})
+	return buf.String(), errBuf.String(), nil
+}
+
+// K8sExecInPodWithoutTTY Exec into the pod without allocating a TTY. Output: stdout, stderr, err
+func K8sExecInPodWithoutTTY(pod string, ns string, cmd []string) (string, string, error) {
+	req := k8sClient.K8sClientset.CoreV1().RESTClient().Post().Resource("pods").Name(pod).Namespace(ns).SubResource("exec")
+	option := &corev1.PodExecOptions{
+		Command: cmd,
+		Stdout:  true,
+		Stderr:  true,
+		TTY:     false,
+	}
+	req.VersionedParams(
+		option,
+		scheme.ParameterCodec,
+	)
+	exec, err := remotecommand.NewSPDYExecutor(k8sClient.Config, "POST", req.URL())
+	if err != nil {
+		return "", "", err
+	}
+	buf := &bytes.Buffer{}
+	errBuf := &bytes.Buffer{}
+	exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: buf,
 		Stderr: errBuf,
 	})
@@ -350,7 +376,7 @@ func K8sExecInPodWithContainer(pod string, ns string, container string, cmd []st
 	}
 	buf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
-	exec.Stream(remotecommand.StreamOptions{
+	exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: buf,
 		Stderr: errBuf,
 	})
@@ -512,7 +538,7 @@ func K8sApplyFile(fileName string) error {
 		return err
 	}
 
-	// multiple yaml files seperate by ---
+	// multiple yaml files separate by ---
 	fileAsString := string(f[:])
 
 	for f := range strings.SplitSeq(fileAsString, "---") {
@@ -550,6 +576,7 @@ func K8sApplyFile(fileName string) error {
 			}
 			ksp.Spec.Network = kcV1.NetworkType{
 				MatchProtocols: append([]kcV1.MatchNetworkProtocolType{}, ksp.Spec.Network.MatchProtocols...),
+				MatchDNSQueries: append([]kcV1.MatchDNSQueryType{}, ksp.Spec.Network.MatchDNSQueries...),
 			}
 
 			result, err := k8sClient.KSPClientset.KubeArmorPolicies(ksp.Namespace).Create(context.TODO(), ksp, metav1.CreateOptions{})
@@ -569,6 +596,7 @@ func K8sApplyFile(fileName string) error {
 			}
 			csp.Spec.Network = kcV1.NetworkType{
 				MatchProtocols: append([]kcV1.MatchNetworkProtocolType{}, csp.Spec.Network.MatchProtocols...),
+				MatchDNSQueries: append([]kcV1.MatchDNSQueryType{}, csp.Spec.Network.MatchDNSQueries...),
 			}
 
 			result, err := k8sClient.KSPClientset.KubeArmorClusterPolicies().Create(context.TODO(), csp, metav1.CreateOptions{})
@@ -623,6 +651,7 @@ func K8sApplyFile(fileName string) error {
 			}
 			hsp.Spec.Network = kcV1.HostNetworkType{
 				MatchProtocols: append([]kcV1.MatchHostNetworkProtocolType{}, hsp.Spec.Network.MatchProtocols...),
+				MatchDNSQueries: append([]kcV1.MatchHostDNSQueryType{}, hsp.Spec.Network.MatchDNSQueries...),
 			}
 
 			result, err := kcClient.KubeArmorHostPolicies().Create(context.TODO(), hsp, metav1.CreateOptions{})
@@ -685,7 +714,7 @@ func K8sRuntime() string {
 	return splitStr[0]
 }
 
-// RunDockerCommand() executes docker commmands
+// RunDockerCommand() executes docker commands
 func RunDockerCommand(cmdParts []string) (string, error) {
 	if len(cmdParts) == 0 {
 		return "", errors.New("empty command")
@@ -718,6 +747,22 @@ func AssertCommand(wp string, namespace string, cmd []string, match gomegaTypes.
 		}, 10*time.Second, 2*time.Second).Should(match)
 	} else {
 		sout, _, err := K8sExecInPod(wp, namespace, cmd)
+		Expect(err).To(BeNil())
+		fmt.Printf("---START---\n%s---END---\n", sout)
+		Expect(sout).To(match)
+	}
+}
+
+func AssertCommandWithoutTTY(wp string, namespace string, cmd []string, match gomegaTypes.GomegaMatcher, eventual bool) {
+	if eventual {
+		Eventually(func() string {
+			sout, _, err := K8sExecInPodWithoutTTY(wp, namespace, cmd)
+			Expect(err).To(BeNil())
+			fmt.Printf("---START---\n%s---END---\n", sout)
+			return sout
+		}, 10*time.Second, 2*time.Second).Should(match)
+	} else {
+		sout, _, err := K8sExecInPodWithoutTTY(wp, namespace, cmd)
 		Expect(err).To(BeNil())
 		fmt.Printf("---START---\n%s---END---\n", sout)
 		Expect(sout).To(match)

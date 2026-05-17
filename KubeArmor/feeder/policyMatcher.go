@@ -214,6 +214,11 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 
 		match.OwnerOnly = ppt.OwnerOnly
 
+		if ppt.Pts != nil {
+			match.Pts = new(bool)
+			*match.Pts = *ppt.Pts
+		}
+
 		if policyEnabled == tp.KubeArmorPolicyAudited && ppt.Action == "Allow" {
 			match.Action = "Audit (" + ppt.Action + ")"
 		} else if policyEnabled == tp.KubeArmorPolicyAudited && ppt.Action == "Block" {
@@ -232,6 +237,11 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 
 		match.OwnerOnly = pdt.OwnerOnly
 		match.Recursive = pdt.Recursive
+
+		if pdt.Pts != nil {
+			match.Pts = new(bool)
+			*match.Pts = *pdt.Pts
+		}
 
 		if policyEnabled == tp.KubeArmorPolicyAudited && pdt.Action == "Allow" {
 			match.Action = "Audit (" + pdt.Action + ")"
@@ -270,6 +280,11 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 		match.OwnerOnly = fpt.OwnerOnly
 		match.ReadOnly = fpt.ReadOnly
 
+		if fpt.Pts != nil {
+			match.Pts = new(bool)
+			*match.Pts = *fpt.Pts
+		}
+
 		if policyEnabled == tp.KubeArmorPolicyAudited && fpt.Action == "Allow" {
 			match.Action = "Audit (" + fpt.Action + ")"
 		} else if policyEnabled == tp.KubeArmorPolicyAudited && fpt.Action == "Block" {
@@ -289,6 +304,11 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 		match.OwnerOnly = fdt.OwnerOnly
 		match.ReadOnly = fdt.ReadOnly
 		match.Recursive = fdt.Recursive
+
+		if fdt.Pts != nil {
+			match.Pts = new(bool)
+			*match.Pts = *fdt.Pts
+		}
 
 		if policyEnabled == tp.KubeArmorPolicyAudited && fdt.Action == "Allow" {
 			match.Action = "Audit (" + fdt.Action + ")"
@@ -324,6 +344,11 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 		match.Resource = strings.ToLower(npt.Protocol)
 		match.ResourceType = "Protocol"
 
+		if npt.Pts != nil {
+			match.Pts = new(bool)
+			*match.Pts = *npt.Pts
+		}
+
 		// TODO: Handle cases where AppArmor network enforcement is not present
 		// https://github.com/kubearmor/KubeArmor/issues/1285
 		if policyEnabled == tp.KubeArmorPolicyAudited && npt.Action == "Allow" {
@@ -332,6 +357,22 @@ func (fd *Feeder) newMatchPolicy(policyEnabled int, policyName, src string, mp a
 			match.Action = "Audit (" + npt.Action + ")"
 		} else {
 			match.Action = npt.Action
+		}
+	} else if ndns, ok := mp.(tp.MatchDNSQueryType); ok {
+		match.Severity = strconv.Itoa(ndns.Severity)
+		match.Tags = ndns.Tags
+		match.Message = ndns.Message
+
+		match.Operation = "Network"
+		match.Resource = strings.ToLower(ndns.Domain)
+		match.ResourceType = "DNS"
+
+		if policyEnabled == tp.KubeArmorPolicyAudited && ndns.Action == "Allow" {
+			match.Action = "Audit (" + ndns.Action + ")"
+		} else if policyEnabled == tp.KubeArmorPolicyAudited && ndns.Action == "Block" {
+			match.Action = "Audit (" + ndns.Action + ")"
+		} else {
+			match.Action = ndns.Action
 		}
 	} else if cct, ok := mp.(tp.CapabilitiesCapabilityType); ok {
 		match.Severity = strconv.Itoa(cct.Severity)
@@ -585,6 +626,38 @@ func (fd *Feeder) UpdateSecurityPolicies(action string, endPoint tp.EndPoint) {
 				matches.Policies = append(matches.Policies, match)
 			}
 
+		}
+
+		for _, dns := range secPolicy.Spec.Network.MatchDNSQueries {
+			if len(dns.Domain) == 0 {
+				continue
+			}
+
+			fromSource := ""
+
+			if len(dns.FromSource) == 0 {
+				match := fd.newMatchPolicy(endPoint.PolicyEnabled, policyName, fromSource, dns)
+				if len(match.Resource) == 0 {
+					continue
+				}
+				matches.Policies = append(matches.Policies, match)
+				continue
+			}
+
+			for _, src := range dns.FromSource {
+				if len(src.Path) > 0 {
+					fromSource = src.Path
+				} else {
+					continue
+				}
+
+				match := fd.newMatchPolicy(endPoint.PolicyEnabled, policyName, fromSource, dns)
+				if len(match.Resource) == 0 {
+					continue
+				}
+				match.IsFromSource = len(fromSource) > 0
+				matches.Policies = append(matches.Policies, match)
+			}
 		}
 
 		for _, cap := range secPolicy.Spec.Capabilities.MatchCapabilities {
@@ -902,6 +975,38 @@ func (fd *Feeder) UpdateHostSecurityPolicies(action string, secPolicies []tp.Hos
 				}
 
 				match := fd.newMatchPolicy(fd.Node.PolicyEnabled, policyName, fromSource, proto)
+				if len(match.Resource) == 0 {
+					continue
+				}
+				match.IsFromSource = len(fromSource) > 0
+				matches.Policies = append(matches.Policies, match)
+			}
+		}
+
+		for _, dns := range secPolicy.Spec.Network.MatchDNSQueries {
+			if len(dns.Domain) == 0 {
+				continue
+			}
+
+			fromSource := ""
+
+			if len(dns.FromSource) == 0 {
+				match := fd.newMatchPolicy(fd.Node.PolicyEnabled, policyName, fromSource, dns)
+				if len(match.Resource) == 0 {
+					continue
+				}
+				matches.Policies = append(matches.Policies, match)
+				continue
+			}
+
+			for _, src := range dns.FromSource {
+				if len(src.Path) > 0 {
+					fromSource = src.Path
+				} else {
+					continue
+				}
+
+				match := fd.newMatchPolicy(fd.Node.PolicyEnabled, policyName, fromSource, dns)
 				if len(match.Resource) == 0 {
 					continue
 				}
@@ -1407,6 +1512,12 @@ func (fd *Feeder) UpdateMatchedPolicy(log tp.Log) tp.Log {
 							} else if log.UID != log.OID {
 								matchedFlags = true
 							}
+						} else if secPolicy.Pts != nil && !*secPolicy.Pts {
+							if log.TTY == "" {
+								matchedFlags = false
+							} else {
+								matchedFlags = true
+							}
 						} else {
 							// ! read only && ! owner only
 							matchedFlags = true
@@ -1590,13 +1701,44 @@ func (fd *Feeder) UpdateMatchedPolicy(log tp.Log) tp.Log {
 				if skip {
 					break // break, so that once source is matched for a log it doesn't look for other cases
 				}
+
 				// match sources
 				if (!secPolicy.IsFromSource) || (secPolicy.IsFromSource && (strings.HasPrefix(log.Source, secPolicy.Source+" ") || secPolicy.Source == log.ProcessName)) {
 					matchedFlags := false
 
-					protocol := fetchProtocol(log.Resource)
-					if protocol == secPolicy.Resource || secPolicy.Resource == "all" {
-						matchedFlags = true
+					protocol := "unknown"
+					switch secPolicy.ResourceType {
+					case "Protocol":
+						protocol = fetchProtocol(log.Resource)
+						if protocol == secPolicy.Resource || secPolicy.Resource == "all" {
+							matchedFlags = true
+						}
+						if secPolicy.Pts != nil && !*secPolicy.Pts {
+							if log.TTY == "" {
+								matchedFlags = false
+							} else {
+								matchedFlags = true
+							}
+						}
+					case "DNS":
+						// For BPFLSM events, log.Resource is the domain.
+						// For kprobe (udp_sendmsg) audit events, the domain is embedded in log.Data (e.g., "domain=google.com").
+						resource := strings.ToLower(log.Resource)
+						if strings.Contains(log.Data, "domain=") {
+							for _, part := range strings.Split(log.Data, " ") {
+								if strings.HasPrefix(part, "domain=") {
+									resource = strings.ToLower(strings.TrimPrefix(part, "domain="))
+									break
+								}
+							}
+						}
+
+						// Match exact domain or K8s search-path expansions (e.g. google.com.svc.cluster.local)
+						domain := strings.ToLower(secPolicy.Resource)
+						if resource == domain || strings.HasPrefix(resource, domain+".") {
+							log.Resource = secPolicy.Resource // normalize log resource to the policy resource
+							matchedFlags = true
+						}
 					}
 
 					if matchedFlags {
@@ -1686,7 +1828,7 @@ func (fd *Feeder) UpdateMatchedPolicy(log tp.Log) tp.Log {
 						}
 					}
 					// if protocol is unknown we skip the audit alert event
-					if protocol == "unknown" {
+					if protocol == "unknown" && secPolicy.ResourceType == "Protocol" {
 						log.Type = "MatchedPolicy"
 						log.Action = "Allow"
 						continue

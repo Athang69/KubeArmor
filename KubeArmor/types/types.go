@@ -158,7 +158,7 @@ type K8sPod struct {
 	Containers      map[string]string
 	ContainerImages map[string]string
 
-	// using two maps here as it is inefficent to
+	// using two maps here as it is inefficient to
 	// obtain either from just one
 	// for storing privilegd container names
 	PrivilegedContainers map[string]struct{}
@@ -338,6 +338,7 @@ type MatchPolicy struct {
 	OwnerOnly    bool
 	ReadOnly     bool
 	Recursive    bool
+	Pts          *bool
 
 	Regexp *regexp.Regexp
 	Native bool
@@ -399,6 +400,7 @@ type ProcessPathType struct {
 	OwnerOnly   bool              `json:"ownerOnly,omitempty"`
 	FromSource  []MatchSourceType `json:"fromSource,omitempty"`
 	AllowedArgs []string          `json:"allowedArgs,omitempty"`
+	Pts         *bool             `json:"pts,omitempty"`
 
 	Severity int      `json:"severity,omitempty"`
 	Tags     []string `json:"tags,omitempty"`
@@ -412,6 +414,7 @@ type ProcessDirectoryType struct {
 	Recursive  bool              `json:"recursive,omitempty"`
 	OwnerOnly  bool              `json:"ownerOnly,omitempty"`
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
+	Pts        *bool             `json:"pts,omitempty"`
 
 	Severity int      `json:"severity,omitempty"`
 	Tags     []string `json:"tags,omitempty"`
@@ -447,6 +450,7 @@ type FilePathType struct {
 	Path       string            `json:"path"`
 	ReadOnly   bool              `json:"readOnly,omitempty"`
 	OwnerOnly  bool              `json:"ownerOnly,omitempty"`
+	Pts        *bool             `json:"pts,omitempty"`
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
 	Severity int      `json:"severity,omitempty"`
@@ -461,6 +465,7 @@ type FileDirectoryType struct {
 	ReadOnly   bool              `json:"readOnly,omitempty"`
 	Recursive  bool              `json:"recursive,omitempty"`
 	OwnerOnly  bool              `json:"ownerOnly,omitempty"`
+	Pts        *bool             `json:"pts,omitempty"`
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
 
 	Severity int      `json:"severity,omitempty"`
@@ -497,16 +502,27 @@ type FileType struct {
 type NetworkProtocolType struct {
 	Protocol   string            `json:"protocol"`
 	FromSource []MatchSourceType `json:"fromSource,omitempty"`
+	Pts        *bool             `json:"pts,omitempty"`
+	Severity   int               `json:"severity,omitempty"`
+	Tags       []string          `json:"tags,omitempty"`
+	Message    string            `json:"message,omitempty"`
+	Action     string            `json:"action,omitempty"`
+}
 
-	Severity int      `json:"severity,omitempty"`
-	Tags     []string `json:"tags,omitempty"`
-	Message  string   `json:"message,omitempty"`
-	Action   string   `json:"action,omitempty"`
+// MatchDNSQueryType Structure
+type MatchDNSQueryType struct {
+	Domain     string            `json:"domain"`
+	FromSource []MatchSourceType `json:"fromSource,omitempty"`
+	Severity   int               `json:"severity,omitempty"`
+	Tags       []string          `json:"tags,omitempty"`
+	Message    string            `json:"message,omitempty"`
+	Action     string            `json:"action,omitempty"`
 }
 
 // NetworkType Structure
 type NetworkType struct {
-	MatchProtocols []NetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchProtocols  []NetworkProtocolType `json:"matchProtocols,omitempty"`
+	MatchDNSQueries []MatchDNSQueryType   `json:"matchDNSQueries,omitempty"`
 
 	Severity int      `json:"severity,omitempty"`
 	Tags     []string `json:"tags,omitempty"`
@@ -683,7 +699,7 @@ type HostSecurityPolicy struct {
 type DefaultPosture struct {
 	FileAction         string `json:"file,omitempty"`
 	NetworkAction      string `json:"network,omitempty"`
-	CapabilitiesAction string `json:"capabilties,omitempty"`
+	CapabilitiesAction string `json:"capabilities,omitempty"`
 	DeviceAction       string `json:"device,omitempty"`
 }
 
@@ -692,7 +708,7 @@ type Visibility struct {
 	File         bool `json:"file,omitempty"`
 	Process      bool `json:"process,omitempty"`
 	Network      bool `json:"network,omitempty"`
-	Capabilities bool `json:"capabilties,omitempty"`
+	Capabilities bool `json:"capabilities,omitempty"`
 	DNS          bool `json:"dns,omitempty"`
 	IMA          bool `json:"ima,omitempty"`
 }
