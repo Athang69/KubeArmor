@@ -83,7 +83,7 @@ func (dm *KubeArmorDaemon) HandleNodeAnnotations(node *tp.Node) {
 		}
 	}
 
-	if kl.IsInK8sCluster() && hasSelinux {
+	if kl.IsInK8sCluster() && hasSelinux && !hasBPF {
 		// exception: KubeArmor in a daemonset even though SELinux is enabled
 		if node.Annotations["kubearmor-policy"] == "enabled" {
 			node.Annotations["kubearmor-policy"] = "audited"
