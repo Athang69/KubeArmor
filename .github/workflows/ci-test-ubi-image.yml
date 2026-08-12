@@ -47,7 +47,7 @@ jobs:
           go-version-file: "KubeArmor/go.mod"
 
       - name: Check what paths were updated
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
